@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>體檢報告資料整合系統</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+:root{
+  --primary:#1a56db;--primary-dark:#1341a8;--primary-light:#e8f0fe;
+  --success:#0f7b45;--success-light:#d6f5e8;
+  --danger:#c0392b;--danger-light:#fde8e6;
+  --warning:#b45309;--warning-light:#fef3c7;
+  --info:#0e7490;--info-light:#cffafe;
+  --fhir:#6d28d9;--fhir-light:#f5f3ff;--fhir-border:#c4b5fd;
+  --bg:#f4f6fb;--card:#fff;--border:#dde3ef;
+  --text:#1a1f36;--muted:#6b7a99;--subtle:#a0abc0;
+  --radius:10px;--shadow:0 2px 12px rgba(26,86,219,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;font-size:14px}
+header{background:#fff;border-bottom:1px solid var(--border);padding:0 28px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.hdr-logo{display:flex;align-items:center;gap:10px}
+.hdr-logo-icon{width:32px;height:32px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px}
+.hdr-title{font-size:15px;font-weight:700;letter-spacing:.3px}
+.hdr-right{display:flex;align-items:center;gap:8px;font-size:13px;flex-wrap:wrap}
+.hdr-user-chip{display:flex;align-items:center;gap:6px;background:var(--primary-light);color:var(--primary);padding:4px 12px;border-radius:20px;font-weight:500;font-size:12px}
+main{flex:1;padding:28px 24px;max-width:1160px;margin:0 auto;width:100%}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:14px;box-shadow:var(--shadow)}
+.card-fhir{background:var(--fhir-light);border:1.5px solid var(--fhir-border) !important}
+.card-title{font-size:15px;font-weight:600;margin-bottom:14px;padding-bottom:11px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 16px;border-radius:7px;border:none;cursor:pointer;font-size:13px;font-weight:500;transition:.15s;font-family:inherit;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover:not(:disabled){background:var(--primary-dark)}
+.btn-secondary{background:#f1f4fb;color:var(--text);border:1px solid var(--border)}.btn-secondary:hover:not(:disabled){background:#e4e8f4}
+.btn-danger{background:var(--danger);color:#fff}.btn-danger:hover:not(:disabled){background:#a93226}
+.btn-outline{background:transparent;color:var(--primary);border:1.5px solid var(--primary)}.btn-outline:hover:not(:disabled){background:var(--primary-light)}
+.btn-fhir{background:var(--fhir);color:#fff;border:none}.btn-fhir:hover:not(:disabled){background:#5b21b6}
+.btn-fhir-outline{background:transparent;color:var(--fhir);border:1.5px solid var(--fhir)}.btn-fhir-outline:hover:not(:disabled){background:var(--fhir-light)}
+.btn-sm{padding:4px 10px;font-size:12px;border-radius:5px}
+.btn-lg{padding:11px 26px;font-size:15px}
+.badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.3px}
+.badge-success{background:var(--success-light);color:var(--success)}
+.badge-danger{background:var(--danger-light);color:var(--danger)}
+.badge-warning{background:var(--warning-light);color:var(--warning)}
+.badge-info{background:var(--info-light);color:var(--info)}
+.badge-gray{background:#f0f2f8;color:var(--muted)}
+.badge-primary{background:var(--primary-light);color:var(--primary)}
+.badge-fhir{background:var(--fhir-light);color:var(--fhir)}
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:13px;font-weight:500;margin-bottom:5px}
+.form-control{width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;color:var(--text);background:#fff;transition:.15s;font-family:inherit}
+.form-control:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,86,219,.09)}
+select.form-control{cursor:pointer}
+.hint{font-size:11px;color:var(--muted);margin-top:4px}
+.alert{padding:11px 14px;border-radius:8px;margin-bottom:13px;font-size:13px;line-height:1.6}
+.alert-warning{background:var(--warning-light);color:#92400e;border:1px solid #fcd34d}
+.alert-danger{background:var(--danger-light);color:#991b1b;border:1px solid #fca5a5}
+.alert-success{background:var(--success-light);color:#14532d;border:1px solid #86efac}
+.alert-info{background:var(--info-light);color:#155e75;border:1px solid #67e8f9}
+.alert-fhir{background:var(--fhir-light);color:#4c1d95;border:1px solid var(--fhir-border)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:9px 11px;background:#f7f9fd;border-bottom:1.5px solid var(--border);font-weight:600;font-size:12px;color:var(--muted);white-space:nowrap}
+td{padding:9px 11px;border-bottom:1px solid #f0f2f8;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafbff}
+.landing-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 220px);gap:36px;text-align:center}
+.landing-title{font-size:30px;font-weight:700;color:var(--primary);letter-spacing:-.5px}
+.landing-sub{font-size:15px;color:var(--muted);margin-top:6px}
+.role-cards{display:flex;gap:18px;flex-wrap:wrap;justify-content:center}
+.role-card{background:var(--card);border:2px solid var(--border);border-radius:14px;padding:32px 44px;cursor:pointer;transition:.2s;min-width:180px;text-align:center}
+.role-card:hover{border-color:var(--primary);transform:translateY(-3px);box-shadow:0 10px 28px rgba(26,86,219,.12)}
+.role-card-icon{font-size:38px;margin-bottom:10px}
+.role-card-name{font-size:17px;font-weight:700}
+.role-card-desc{font-size:12px;color:var(--muted);margin-top:4px}
+.back-btn{display:inline-flex;align-items:center;gap:5px;color:var(--muted);cursor:pointer;font-size:13px;margin-bottom:18px;transition:.15s}
+.back-btn:hover{color:var(--primary)}
+.sec-title{font-size:18px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.dept-tag{display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600;background:#e8edff;color:var(--primary)}
+.tab-bar{display:flex;border-bottom:1.5px solid var(--border);margin-bottom:18px;overflow-x:auto}
+.tab{padding:9px 20px;font-size:13px;cursor:pointer;border-bottom:2.5px solid transparent;color:var(--muted);transition:.15s;white-space:nowrap}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+.empty-state{text-align:center;padding:52px 24px;color:var(--muted)}
+.empty-icon{font-size:44px;margin-bottom:10px}
+.mono{font-family:'DM Mono',monospace;font-size:12px}
+.value-abnormal{color:var(--danger);font-weight:700}
+.value-normal{color:var(--success);font-weight:500}
+.note-box{background:#f7f9fd;border:1px solid var(--border);border-radius:7px;padding:9px 12px;margin-top:7px}
+.note-author{font-size:12px;font-weight:600;color:var(--primary)}
+.note-time{font-size:11px;color:var(--subtle)}
+.note-text{font-size:13px;margin:4px 0}
+.appt-slot{border:1.5px solid var(--border);border-radius:8px;padding:11px 14px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;transition:.15s}
+.appt-slot.avail:hover{border-color:var(--primary);background:var(--primary-light);cursor:pointer}
+.appt-slot.full{opacity:.5}
+.success-wrap{max-width:480px;margin:56px auto;text-align:center}
+.big-num{font-size:48px;font-weight:800;color:var(--primary);font-family:'DM Mono',monospace}
+.login-wrap{max-width:420px;margin:56px auto}
+.ref-dept-badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;background:#fff0f0;color:var(--danger);border:1px solid #fca5a5}
+/* FHIR JSON preview */
+.fhir-pre{background:#1e1e2e;color:#cdd6f4;border-radius:8px;padding:16px;font-size:11px;font-family:'DM Mono',monospace;overflow:auto;max-height:340px;line-height:1.6;margin-top:10px}
+.fhir-pre .k{color:#89b4fa}.fhir-pre .s{color:#a6e3a1}.fhir-pre .n{color:#fab387}.fhir-pre .b{color:#cba6f7}
+.fhir-tag{display:inline-flex;align-items:center;gap:4px;background:var(--fhir-light);border:1px solid var(--fhir-border);color:var(--fhir);border-radius:5px;padding:2px 8px;font-size:11px;font-weight:600}
+.spin{display:inline-block;animation:spin 1s linear infinite}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+/* Progress bar */
+.prog-wrap{background:var(--border);border-radius:4px;height:6px;width:100%;overflow:hidden;margin:4px 0}
+.prog-bar{height:100%;border-radius:4px;transition:width .4s}
+footer{background:#fff;border-top:1px solid var(--border);padding:26px 28px;margin-top:32px}
+.footer-inner{max-width:1160px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+.footer-h{font-size:13px;font-weight:600;margin-bottom:8px}
+.footer-p{font-size:12px;color:var(--muted);line-height:1.8}
+.footer-bottom{max-width:1160px;margin:16px auto 0;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--subtle);text-align:center}
+@media(max-width:768px){.footer-inner{grid-template-columns:1fr 1fr}.role-cards{flex-direction:column;align-items:center}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hdr-logo">
+    <div class="hdr-logo-icon">🏥</div>
+    <div class="hdr-title">體檢報告資料整合系統</div>
+  </div>
+  <div class="hdr-right" id="hdrRight"></div>
+</header>
+<main id="app"></main>
+<footer>
+  <div class="footer-inner">
+    <div><div class="footer-h">📍 地址</div><div class="footer-p">台北市中正區中山南路7號（台大醫院總院）<br>台北市松山區敦化北路199號（長庚醫院）<br>台北市北投區石牌路二段201號（榮總醫院）</div></div>
+    <div><div class="footer-h">📞 電話</div><div class="footer-p">台大醫院：(02) 2312-3456<br>長庚醫院：(03) 328-1200<br>榮總醫院：(02) 2871-2121<br>急診（24小時）：(02) 2312-3119</div></div>
+    <div><div class="footer-h">📧 Email</div><div class="footer-p">掛號諮詢：register@hospital.gov.tw<br>行政業務：admin@hospital.gov.tw<br>系統維護：system@hospital.gov.tw</div></div>
+    <div><div class="footer-h">🕐 上班時間</div><div class="footer-p">週一至週五：08:00 – 17:30<br>週六：08:00 – 12:30<br>週日及國定假日：休診<br>急診：全年24小時服務</div></div>
+  </div>
+  <div class="footer-bottom">© 2026 體檢報告資料整合系統 ｜ 本系統資料受個資法保護，僅限授權人員使用 ｜ FHIR R4 Compatible</div>
+</footer>
+
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════════════════════
+   1. TEST DEFINITIONS  (dept = 醫檢師登入科別, ref = 臨床複診科別)
+   ═══════════════════════════════════════════════════════════ */
+const T = {
+  hgb:     {name:'血紅素 (Hemoglobin)',          unit:'g/dL',      dept:'血液科',    rangeM:[13.5,17.5],rangeF:[12.0,16.0], ref:'血液腫瘤科', wL:5,    wH:25},
+  wbc:     {name:'白血球 (WBC)',                  unit:'/μL',       dept:'血液科',    rangeB:[4000,10000],                    ref:'血液腫瘤科', wL:500,  wH:50000},
+  plt:     {name:'血小板 (Platelet)',             unit:'/μL',       dept:'血液科',    rangeB:[150000,400000],                  ref:'血液腫瘤科', wL:5000, wH:1200000},
+  rbc:     {name:'紅血球 (RBC)',                  unit:'×10⁶/μL', dept:'血液科',    rangeM:[4.5,5.9],rangeF:[4.0,5.2],      ref:'血液腫瘤科', wL:1,    wH:10},
+  glucose: {name:'血糖 (Glucose)',                unit:'mg/dL',     dept:'生化科',    rangeB:[70,100],                         ref:'新陳代謝科', wL:20,   wH:600},
+  chol:    {name:'總膽固醇',                      unit:'mg/dL',     dept:'生化科',    rangeB:[null,200],                       ref:'心臟內科',   wL:50,   wH:700},
+  tg:      {name:'三酸甘油酯',                    unit:'mg/dL',     dept:'生化科',    rangeB:[null,150],                       ref:'心臟內科',   wL:10,   wH:2000},
+  hdl:     {name:'HDL 好膽固醇',                 unit:'mg/dL',     dept:'生化科',    rangeM:[40,null],rangeF:[50,null],       ref:'心臟內科',   wL:5,    wH:200},
+  ldl:     {name:'LDL 壞膽固醇',                 unit:'mg/dL',     dept:'生化科',    rangeB:[null,100],                       ref:'心臟內科',   wL:10,   wH:500},
+  ua:      {name:'尿酸 (Uric Acid)',              unit:'mg/dL',     dept:'生化科',    rangeM:[3.4,7.0],rangeF:[2.4,6.0],      ref:'風濕免疫科', wL:0.5,  wH:20},
+  cr:      {name:'肌酸酐 (Creatinine)',           unit:'mg/dL',     dept:'生化科',    rangeM:[0.7,1.2],rangeF:[0.5,1.0],      ref:'腎臟科',     wL:0.1,  wH:20},
+  ast:     {name:'AST (GOT)',                      unit:'U/L',       dept:'肝膽科',    rangeB:[10,40],                          ref:'肝膽腸胃科', wL:1,    wH:3000},
+  alt:     {name:'ALT (GPT)',                      unit:'U/L',       dept:'肝膽科',    rangeB:[7,56],                           ref:'肝膽腸胃科', wL:1,    wH:3000},
+  tbil:    {name:'總膽紅素',                      unit:'mg/dL',     dept:'肝膽科',    rangeB:[0.2,1.2],                        ref:'肝膽腸胃科', wL:0.05, wH:30},
+  alb:     {name:'白蛋白 (Albumin)',              unit:'g/dL',      dept:'肝膽科',    rangeB:[3.5,5.5],                        ref:'肝膽腸胃科', wL:0.5,  wH:8},
+  alp:     {name:'鹼性磷酸酶 (ALP)',             unit:'U/L',       dept:'肝膽科',    rangeB:[44,147],                         ref:'肝膽腸胃科', wL:1,    wH:2000},
+  bun:     {name:'BUN 尿素氮',                    unit:'mg/dL',     dept:'腎臟科',    rangeB:[7,20],                           ref:'腎臟科',     wL:1,    wH:300},
+  egfr:    {name:'eGFR 腎絲球過濾率',            unit:'mL/min',    dept:'腎臟科',    rangeB:[90,null],                        ref:'腎臟科',     wL:1,    wH:200},
+  uprot:   {name:'尿蛋白',                        unit:'mg/dL',     dept:'腎臟科',    rangeB:[null,20],                        ref:'腎臟科',     wL:0,    wH:5000},
+  hba1c:   {name:'糖化血色素 HbA1c',             unit:'%',         dept:'新陳代謝科',rangeB:[null,5.7],                       ref:'新陳代謝科', wL:2,    wH:20},
+  tsh:     {name:'甲狀腺刺激素 TSH',             unit:'mIU/L',     dept:'新陳代謝科',rangeB:[0.4,4.0],                        ref:'新陳代謝科', wL:0.01, wH:100},
+  ft4:     {name:'游離甲狀腺素 Free T4',         unit:'ng/dL',     dept:'新陳代謝科',rangeB:[0.8,1.8],                        ref:'新陳代謝科', wL:0.1,  wH:10},
+  ins:     {name:'空腹胰島素 Insulin',           unit:'μIU/mL',    dept:'新陳代謝科',rangeB:[2.6,24.9],                       ref:'新陳代謝科', wL:0.1,  wH:500},
+  sbp:     {name:'收縮壓 (SBP)',                 unit:'mmHg',      dept:'心臟科',    rangeB:[null,130],                       ref:'心臟內科',   wL:40,   wH:280},
+  dbp:     {name:'舒張壓 (DBP)',                 unit:'mmHg',      dept:'心臟科',    rangeB:[null,85],                        ref:'心臟內科',   wL:20,   wH:180},
+  hr:      {name:'心跳 (Heart Rate)',            unit:'次/分',     dept:'心臟科',    rangeB:[60,100],                         ref:'心臟內科',   wL:20,   wH:300},
+  ck:      {name:'肌酸激酶 (CK)',                unit:'U/L',       dept:'心臟科',    rangeB:[24,195],                         ref:'心臟內科',   wL:1,    wH:10000},
+  bone:    {name:'骨密度 T-Score',               unit:'SD',        dept:'放射科',    rangeB:[-1.0,null],                      ref:'骨科',       wL:-5,   wH:5},
+  cxr:     {name:'胸部X光（心胸比）',            unit:'',          dept:'放射科',    rangeB:[null,0.5],                       ref:'心臟內科',   wL:0.2,  wH:0.95},
+  bmi:     {name:'身體質量指數 BMI',             unit:'kg/m²',     dept:'理學檢查',  rangeB:[18.5,24.9],                      ref:'家醫科',     wL:10,   wH:60},
+  waist:   {name:'腰圍',                         unit:'cm',        dept:'理學檢查',  rangeM:[null,90],rangeF:[null,80],       ref:'家醫科',     wL:30,   wH:200},
+  vision_r:{name:'右眼裸視視力',                unit:'',          dept:'理學檢查',  rangeB:[0.8,null],                       ref:'眼科',       wL:0.01, wH:3.0},
+  vision_l:{name:'左眼裸視視力',                unit:'',          dept:'理學檢查',  rangeB:[0.8,null],                       ref:'眼科',       wL:0.01, wH:3.0},
+};
+
+const DEPT_TESTS = {
+  '血液科':    ['hgb','wbc','plt','rbc'],
+  '生化科':    ['glucose','chol','tg','hdl','ldl','ua','cr'],
+  '肝膽科':    ['ast','alt','tbil','alb','alp'],
+  '腎臟科':    ['bun','egfr','uprot'],
+  '新陳代謝科':['hba1c','tsh','ft4','ins'],
+  '心臟科':    ['sbp','dbp','hr','ck'],
+  '放射科':    ['bone','cxr'],
+  '理學檢查':  ['bmi','waist','vision_r','vision_l'],
+};
+
+/* ═══════════════════════════════════════════════════════════
+   2. LOINC CODE MAPPING  (for FHIR Observation coding)
+   ═══════════════════════════════════════════════════════════ */
+const LOINC = {
+  hgb:     {code:'718-7',    display:'Hemoglobin [Mass/volume] in Blood'},
+  wbc:     {code:'6690-2',   display:'Leukocytes [#/volume] in Blood'},
+  plt:     {code:'777-3',    display:'Platelets [#/volume] in Blood'},
+  rbc:     {code:'789-8',    display:'Erythrocytes [#/volume] in Blood'},
+  glucose: {code:'2339-0',   display:'Glucose [Mass/volume] in Blood'},
+  chol:    {code:'2093-3',   display:'Cholesterol [Mass/volume] in Serum or Plasma'},
+  tg:      {code:'2571-8',   display:'Triglyceride [Mass/volume] in Serum or Plasma'},
+  hdl:     {code:'2085-9',   display:'Cholesterol in HDL [Mass/volume] in Serum or Plasma'},
+  ldl:     {code:'2089-1',   display:'Cholesterol in LDL [Mass/volume] in Serum or Plasma'},
+  ua:      {code:'3084-1',   display:'Urate [Mass/volume] in Serum or Plasma'},
+  cr:      {code:'2160-0',   display:'Creatinine [Mass/volume] in Serum or Plasma'},
+  ast:     {code:'1920-8',   display:'Aspartate aminotransferase [Enzymatic activity/volume] in Serum or Plasma'},
+  alt:     {code:'1742-6',   display:'Alanine aminotransferase [Enzymatic activity/volume] in Serum or Plasma'},
+  tbil:    {code:'1975-2',   display:'Bilirubin.total [Mass/volume] in Serum or Plasma'},
+  alb:     {code:'1751-7',   display:'Albumin [Mass/volume] in Serum or Plasma'},
+  alp:     {code:'6768-6',   display:'Alkaline phosphatase [Enzymatic activity/volume] in Serum or Plasma'},
+  bun:     {code:'3094-0',   display:'Urea nitrogen [Mass/volume] in Serum or Plasma'},
+  egfr:    {code:'62238-1',  display:'Glomerular filtration rate/1.73 sq M.predicted [Volume Rate/Area] in Serum, Plasma or Blood by CKD-EPI'},
+  uprot:   {code:'2888-6',   display:'Protein [Mass/volume] in Urine'},
+  hba1c:   {code:'4548-4',   display:'Hemoglobin A1c/Hemoglobin.total in Blood'},
+  tsh:     {code:'3016-3',   display:'Thyrotropin [Units/volume] in Serum or Plasma'},
+  ft4:     {code:'3024-7',   display:'Thyroxine (T4) free [Mass/volume] in Serum or Plasma'},
+  ins:     {code:'20448-7',  display:'Insulin [Units/volume] in Serum or Plasma'},
+  sbp:     {code:'8480-6',   display:'Systolic blood pressure'},
+  dbp:     {code:'8462-4',   display:'Diastolic blood pressure'},
+  hr:      {code:'8867-4',   display:'Heart rate'},
+  ck:      {code:'2157-6',   display:'Creatine kinase [Enzymatic activity/volume] in Serum or Plasma'},
+  bone:    {code:'38269-7',  display:'DXA [T-score] Bone density'},
+  cxr:     {code:'24627-2',  display:'Chest X-ray (cardiothoracic ratio)'},
+  bmi:     {code:'39156-5',  display:'Body mass index (BMI) [Ratio]'},
+  waist:   {code:'56115-9',  display:'Waist Circumference at umbilicus by Tape measure'},
+  vision_r:{code:'79893-4',  display:'Visual acuity of right eye'},
+  vision_l:{code:'79892-6',  display:'Visual acuity of left eye'},
+};
+
+/* ═══════════════════════════════════════════════════════════
+   3. DOCTORS / TECHS / ADMINS MASTER DATA
+   ═══════════════════════════════════════════════════════════ */
+const DOCTORS = {
+  '台大醫院':{
+    '血液腫瘤科':[{id:'D001',name:'劉俊豪醫師',slots:[{t:'2026-04-17 09:00',tot:25,bk:9},{t:'2026-04-22 14:00',tot:20,bk:0}]},{id:'D002',name:'許淑惠醫師',slots:[{t:'2026-04-18 08:30',tot:20,bk:20},{t:'2026-04-24 09:00',tot:25,bk:4}]}],
+    '肝膽腸胃科':[{id:'D007',name:'吳宗翰醫師',slots:[{t:'2026-04-15 13:30',tot:20,bk:14},{t:'2026-04-21 09:00',tot:25,bk:6}]},{id:'D008',name:'蔡雅婷醫師',slots:[{t:'2026-04-16 08:30',tot:20,bk:3},{t:'2026-04-23 14:00',tot:25,bk:0}]}],
+    '腎臟科':[{id:'D005',name:'張文華醫師',slots:[{t:'2026-04-15 09:00',tot:25,bk:18},{t:'2026-04-22 14:00',tot:20,bk:7}]},{id:'D006',name:'李佳蓉醫師',slots:[{t:'2026-04-17 14:00',tot:20,bk:5},{t:'2026-04-24 09:00',tot:25,bk:0}]}],
+    '新陳代謝科':[{id:'D003',name:'林志明醫師',slots:[{t:'2026-04-16 08:30',tot:30,bk:22},{t:'2026-04-22 09:00',tot:30,bk:0}]},{id:'D004',name:'陳怡君醫師',slots:[{t:'2026-04-17 13:30',tot:25,bk:8},{t:'2026-04-23 08:30',tot:20,bk:3}]}],
+    '心臟內科':[{id:'D009',name:'王建國醫師',slots:[{t:'2026-04-15 14:00',tot:25,bk:25},{t:'2026-04-21 09:00',tot:30,bk:5}]},{id:'D010',name:'黃淑芬醫師',slots:[{t:'2026-04-17 08:30',tot:20,bk:6},{t:'2026-04-22 14:00',tot:20,bk:0}]}],
+    '風濕免疫科':[{id:'D011',name:'陳文義醫師',slots:[{t:'2026-04-16 09:00',tot:20,bk:7},{t:'2026-04-23 09:00',tot:20,bk:2}]}],
+    '骨科':[{id:'D012',name:'曾建志醫師',slots:[{t:'2026-04-17 14:00',tot:25,bk:15},{t:'2026-04-24 08:30',tot:25,bk:8}]}],
+    '眼科':[{id:'D013',name:'賴美華醫師',slots:[{t:'2026-04-15 08:30',tot:20,bk:4},{t:'2026-04-22 09:00',tot:20,bk:0}]}],
+    '家醫科':[{id:'D014',name:'李思穎醫師',slots:[{t:'2026-04-16 13:30',tot:30,bk:12},{t:'2026-04-23 14:00',tot:30,bk:5}]}],
+  },
+  '長庚醫院':{
+    '血液腫瘤科':[{id:'D101',name:'方俊賢醫師',slots:[{t:'2026-04-16 14:00',tot:20,bk:8},{t:'2026-04-23 09:00',tot:25,bk:0}]}],
+    '肝膽腸胃科':[{id:'D104',name:'江淑玲醫師',slots:[{t:'2026-04-17 08:30',tot:20,bk:12},{t:'2026-04-24 14:00',tot:25,bk:2}]}],
+    '腎臟科':[{id:'D103',name:'謝凱文醫師',slots:[{t:'2026-04-15 14:00',tot:20,bk:3},{t:'2026-04-22 09:00',tot:25,bk:0}]}],
+    '新陳代謝科':[{id:'D102',name:'鄭宇傑醫師',slots:[{t:'2026-04-15 09:00',tot:25,bk:10},{t:'2026-04-18 13:30',tot:20,bk:5}]}],
+    '心臟內科':[{id:'D105',name:'周美慧醫師',slots:[{t:'2026-04-16 08:30',tot:25,bk:15},{t:'2026-04-23 14:00',tot:20,bk:8}]}],
+    '風濕免疫科':[{id:'D106',name:'林德輝醫師',slots:[{t:'2026-04-17 09:00',tot:20,bk:6},{t:'2026-04-24 09:00',tot:20,bk:0}]}],
+    '骨科':[{id:'D107',name:'吳正義醫師',slots:[{t:'2026-04-15 13:30',tot:20,bk:9},{t:'2026-04-22 14:00',tot:25,bk:4}]}],
+    '眼科':[{id:'D108',name:'簡美玲醫師',slots:[{t:'2026-04-16 09:00',tot:20,bk:2},{t:'2026-04-23 08:30',tot:20,bk:0}]}],
+    '家醫科':[{id:'D109',name:'余文雄醫師',slots:[{t:'2026-04-17 14:00',tot:30,bk:14},{t:'2026-04-24 09:00',tot:30,bk:7}]}],
+  },
+  '榮總醫院':{
+    '血液腫瘤科':[{id:'D201',name:'葉偉民醫師',slots:[{t:'2026-04-16 08:30',tot:20,bk:15},{t:'2026-04-23 14:00',tot:25,bk:0}]}],
+    '肝膽腸胃科':[{id:'D204',name:'陳美如醫師',slots:[{t:'2026-04-15 13:30',tot:20,bk:7},{t:'2026-04-22 09:00',tot:25,bk:3}]}],
+    '腎臟科':[{id:'D203',name:'林宏達醫師',slots:[{t:'2026-04-17 14:00',tot:20,bk:11},{t:'2026-04-24 09:00',tot:25,bk:0}]}],
+    '新陳代謝科':[{id:'D202',name:'賴文正醫師',slots:[{t:'2026-04-15 08:30',tot:25,bk:20},{t:'2026-04-22 14:00',tot:20,bk:6}]}],
+    '心臟內科':[{id:'D205',name:'楊佩珊醫師',slots:[{t:'2026-04-16 09:00',tot:20,bk:0},{t:'2026-04-23 08:30',tot:25,bk:5}]}],
+    '風濕免疫科':[{id:'D206',name:'徐志遠醫師',slots:[{t:'2026-04-17 09:00',tot:20,bk:8},{t:'2026-04-24 14:00',tot:20,bk:3}]}],
+    '骨科':[{id:'D207',name:'洪文義醫師',slots:[{t:'2026-04-15 09:00',tot:20,bk:6},{t:'2026-04-22 08:30',tot:25,bk:0}]}],
+    '眼科':[{id:'D208',name:'莊淑芬醫師',slots:[{t:'2026-04-16 13:30',tot:20,bk:4},{t:'2026-04-23 09:00',tot:20,bk:0}]}],
+    '家醫科':[{id:'D209',name:'鄭建宏醫師',slots:[{t:'2026-04-17 08:30',tot:30,bk:18},{t:'2026-04-24 14:00',tot:30,bk:9}]}],
+  },
+};
+const DOCLIST = {
+  '台大醫院':{'血液腫瘤科':['劉俊豪醫師','許淑惠醫師'],'肝膽腸胃科':['吳宗翰醫師','蔡雅婷醫師'],'腎臟科':['張文華醫師','李佳蓉醫師'],'新陳代謝科':['林志明醫師','陳怡君醫師'],'心臟內科':['王建國醫師','黃淑芬醫師'],'風濕免疫科':['陳文義醫師'],'骨科':['曾建志醫師'],'眼科':['賴美華醫師'],'家醫科':['李思穎醫師']},
+  '長庚醫院':{'血液腫瘤科':['方俊賢醫師'],'肝膽腸胃科':['江淑玲醫師'],'腎臟科':['謝凱文醫師'],'新陳代謝科':['鄭宇傑醫師'],'心臟內科':['周美慧醫師'],'風濕免疫科':['林德輝醫師'],'骨科':['吳正義醫師'],'眼科':['簡美玲醫師'],'家醫科':['余文雄醫師']},
+  '榮總醫院':{'血液腫瘤科':['葉偉民醫師'],'肝膽腸胃科':['陳美如醫師'],'腎臟科':['林宏達醫師'],'新陳代謝科':['賴文正醫師'],'心臟內科':['楊佩珊醫師'],'風濕免疫科':['徐志遠醫師'],'骨科':['洪文義醫師'],'眼科':['莊淑芬醫師'],'家醫科':['鄭建宏醫師']},
+};
+const TECHS = {
+  '台大醫院':{'血液科':['陳麗華醫檢師','林建志醫檢師'],'生化科':['王志偉醫檢師','張淑芬醫檢師'],'肝膽科':['李雅婷醫檢師','黃俊傑醫檢師'],'腎臟科':['吳美玲醫檢師','周文雄醫檢師'],'新陳代謝科':['鄭淑芬醫檢師','葛文明醫檢師'],'心臟科':['許志明醫檢師','蔡佩珊醫檢師'],'放射科':['廖志遠醫檢師','余淑芬放射師','吳明德放射師'],'理學檢查':['蘇建志醫檢師','何美玲護理師','梁佩珊護理師']},
+  '長庚醫院':{'血液科':['方淑慧醫檢師','趙建宏醫檢師'],'生化科':['江宗翰醫檢師','賴文秀醫檢師'],'肝膽科':['楊志遠醫檢師','許美君醫檢師'],'腎臟科':['謝美君醫檢師'],'新陳代謝科':['林俊豪醫檢師','陳怡伶醫檢師'],'心臟科':['陳雅婷醫檢師','周建明醫檢師'],'放射科':['游文雄放射師','簡淑芬放射師'],'理學檢查':['黎明珠護理師','蔡建志護理師']},
+  '榮總醫院':{'血液科':['劉建國醫檢師','洪淑芬醫檢師'],'生化科':['吳宗榮醫檢師','彭美玲醫檢師'],'肝膽科':['張文華醫檢師'],'腎臟科':['李俊賢醫檢師','邱淑芬醫檢師'],'新陳代謝科':['周美玲醫檢師'],'心臟科':['葉佩珊醫檢師','徐建志醫檢師'],'放射科':['莊文義放射師','鄭淑慧放射師'],'理學檢查':['盧美君護理師','陳志遠護理師']},
+};
+const ADMINS = {'台大醫院':['王主任（管理員）','林副主任（管理員）'],'長庚醫院':['陳主任（管理員）','楊副主任（管理員）'],'榮總醫院':['張主任（管理員）']};
+const HOSPITALS = ['台大醫院','長庚醫院','榮總醫院'];
+
+const INIT_PATIENTS = [
+  {id:'P001',name:'王大明',gender:'M',birth:'1975-03-15',idCard:'A123456789',mid:'MID001',reports:[{rid:'R001',hospital:'台大醫院',date:'2026-03-15',obs:{},appts:[],notes:[]}]},
+  {id:'P002',name:'李小梅',gender:'F',birth:'1988-07-22',idCard:'B234567890',mid:'MID002',reports:[{rid:'R002',hospital:'長庚醫院',date:'2026-03-20',obs:{},appts:[],notes:[]}]},
+  {id:'P003',name:'陳志遠',gender:'M',birth:'1962-11-08',idCard:'C345678901',mid:'MID003',reports:[{rid:'R003',hospital:'台大醫院',date:'2026-03-10',obs:{},appts:[],notes:[]},{rid:'R004',hospital:'榮總醫院',date:'2026-03-25',obs:{},appts:[],notes:[]}]},
+  {id:'P004',name:'張美玲',gender:'F',birth:'1990-05-30',idCard:'D456789012',mid:'MID004',reports:[{rid:'R005',hospital:'榮總醫院',date:'2026-03-18',obs:{},appts:[],notes:[]}]},
+  {id:'P005',name:'吳建宏',gender:'M',birth:'1980-09-14',idCard:'E567890123',mid:'MID005',reports:[{rid:'R006',hospital:'台大醫院',date:'2026-03-22',obs:{},appts:[],notes:[]},{rid:'R007',hospital:'長庚醫院',date:'2026-02-10',obs:{},appts:[],notes:[]}]},
+  {id:'P006',name:'林淑芬',gender:'F',birth:'1970-12-03',idCard:'F678901234',mid:'MID006',reports:[{rid:'R008',hospital:'長庚醫院',date:'2026-03-28',obs:{},appts:[],notes:[]}]},
+];
+
+/* ═══════════════════════════════════════════════════════════
+   4. STATE
+   ═══════════════════════════════════════════════════════════ */
+const S = {
+  view:'landing', user:null, patients:null,
+  selPatient:null, selReport:null, pendingHosp:null, activeTab:0,
+  bkRefDept:null, bkStep:1, bkDocId:null, bkDocName:null, bkSlotTime:null, bkNumber:null,
+  fhirServer:'https://hapi.fhir.org/baseR4',
+};
+
+/* ═══════════════════════════════════════════════════════════
+   5. CACHE
+   ═══════════════════════════════════════════════════════════ */
+const CACHE_KEY = 'hris_patients_v3';
+function saveCache(){ try{ localStorage.setItem(CACHE_KEY,JSON.stringify(S.patients)); }catch(e){} }
+function loadCache(){
+  try{
+    const d=localStorage.getItem(CACHE_KEY);
+    if(d){S.patients=JSON.parse(d);return true;}
+  }catch(e){}
+  return false;
+}
+function clearCache(){
+  if(!confirm('確定要清除所有快取資料？此操作將把病患資料重置為初始狀態，且無法還原。'))return;
+  try{localStorage.removeItem(CACHE_KEY);}catch(e){}
+  S.patients=JSON.parse(JSON.stringify(INIT_PATIENTS));
+  S.selPatient=null;S.selReport=null;S.view='landing';S.user=null;
+  saveCache();render();
+}
+if(!loadCache()){S.patients=JSON.parse(JSON.stringify(INIT_PATIENTS));saveCache();}
+
+/* ═══════════════════════════════════════════════════════════
+   6. UTILITIES
+   ═══════════════════════════════════════════════════════════ */
+function nowStr(){return new Date().toLocaleString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});}
+function nowISO(){return new Date().toISOString();}
+function fmtSlot(ts){
+  const d=new Date(ts);const wd=['日','一','二','三','四','五','六'][d.getDay()];
+  return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} (週${wd}) ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+function calcAge(b){
+  const bd=new Date(b),now=new Date();let a=now.getFullYear()-bd.getFullYear();
+  if(now.getMonth()<bd.getMonth()||(now.getMonth()===bd.getMonth()&&now.getDate()<bd.getDate()))a--;return a;
+}
+function getRange(tid,gender){
+  const t=T[tid];if(!t)return null;
+  if(t.rangeB)return t.rangeB;
+  if(gender==='M'&&t.rangeM)return t.rangeM;
+  if(gender==='F'&&t.rangeF)return t.rangeF;
+  if(t.rangeM)return t.rangeM;return null;
+}
+function rangeText(tid,gender){
+  const r=getRange(tid,gender);if(!r)return '—';
+  const[lo,hi]=r;
+  if(lo===null)return `< ${hi}`;if(hi===null)return `> ${lo}`;return `${lo} – ${hi}`;
+}
+function isAbn(tid,val,gender){
+  const r=getRange(tid,gender);if(!r||val===undefined||val===null||val==='')return false;
+  const v=parseFloat(val);if(isNaN(v))return false;
+  const[lo,hi]=r;
+  if(lo!==null&&v<lo)return true;if(hi!==null&&v>hi)return true;return false;
+}
+function isExtremeWarn(tid,val){
+  const t=T[tid];if(!t)return false;const v=parseFloat(val);if(isNaN(v))return false;
+  if(t.wL!==undefined&&v<t.wL)return true;if(t.wH!==undefined&&v>t.wH)return true;return false;
+}
+function findReport(rid){
+  for(const p of S.patients){const r=p.reports.find(x=>x.rid===rid);if(r)return{patient:p,report:r};}
+  return null;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   7. FHIR R4 CORE FUNCTIONS
+   ═══════════════════════════════════════════════════════════ */
+
+/**
+ * Sanitise an arbitrary string into a valid FHIR ID.
+ * FHIR R4 rule: [A-Za-z0-9\-\.]{1,64}
+ * Strategy:
+ *   1. Replace underscores with hyphens  (vision_r → vision-r)
+ *   2. Transliterate common CJK / special chars to ASCII via a simple map,
+ *      then strip anything still outside [A-Za-z0-9\-\.]
+ *   3. Collapse consecutive hyphens, trim leading/trailing hyphens
+ *   4. Truncate to 64 characters
+ */
+function sanitizeFhirId(raw){
+  let s = raw
+    // underscores → hyphens
+    .replace(/_/g, '-')
+    // spaces → hyphens
+    .replace(/\s+/g, '-')
+    // common Chinese medical/title suffixes → short ASCII tokens
+    .replace(/醫師/g,'dr').replace(/醫檢師/g,'mt').replace(/放射師/g,'rt')
+    .replace(/護理師/g,'rn').replace(/主任/g,'dir').replace(/副主任/g,'vdir')
+    .replace(/管理員/g,'admin').replace(/（|）|\(|\)/g,'-')
+    // strip everything that is not [A-Za-z0-9\-\.]
+    .replace(/[^A-Za-z0-9\-\.]/g, '')
+    // collapse multiple hyphens
+    .replace(/-{2,}/g, '-')
+    // remove leading / trailing hyphens
+    .replace(/^-+|-+$/g, '');
+  // must start with a letter or digit (FHIR spec)
+  if(s && !/^[A-Za-z0-9]/.test(s)) s = 'id-' + s;
+  // fallback if empty
+  if(!s) s = 'id-' + Math.random().toString(36).slice(2,10);
+  // truncate
+  return s.slice(0, 64);
+}
+
+/**
+ * Build a FHIR R4 Transaction Bundle containing Patient + Observations
+ */
+function buildFhirBundle(patient, report){
+  const patFhirId = sanitizeFhirId(`local-patient-${patient.id}`);
+  const patientRes = {
+    resourceType:'Patient',
+    id: patFhirId,
+    meta:{profile:['http://hl7.org/fhir/StructureDefinition/Patient']},
+    identifier:[
+      {use:'official',system:'urn:tw:nhic:nhid',value:patient.idCard,
+       type:{coding:[{system:'http://terminology.hl7.org/CodeSystem/v2-0203',code:'NI',display:'National unique individual identifier'}],text:'健保卡卡號'}},
+      {use:'usual',system:'urn:tw:hospital:mid',value:patient.mid,
+       type:{coding:[{system:'http://terminology.hl7.org/CodeSystem/v2-0203',code:'MR',display:'Medical record number'}],text:'病歷號'}},
+    ],
+    active:true,
+    name:[{use:'official',text:patient.name,family:patient.name.substring(0,1),given:[patient.name.substring(1)]}],
+    gender: patient.gender==='M'?'male':'female',
+    birthDate: patient.birth,
+    extension:[{url:'http://hl7.org/fhir/StructureDefinition/patient-mothersMaidenName',valueString:report.hospital}],
+  };
+
+  const entries = [{
+    fullUrl:`urn:uuid:${patFhirId}`,
+    resource:patientRes,
+    request:{method:'PUT',url:`Patient/${patFhirId}`},
+  }];
+
+  Object.entries(report.obs).forEach(([tid,obs])=>{
+    const def=T[tid];const loinc=LOINC[tid];if(!loinc)return;
+    const obsId=sanitizeFhirId(`local-obs-${report.rid}-${tid}`);
+    const abn=isAbn(tid,obs.value,patient.gender);
+    const obsRes={
+      resourceType:'Observation',
+      id:obsId,
+      meta:{profile:['http://hl7.org/fhir/StructureDefinition/Observation']},
+      status:'final',
+      category:[{coding:[{system:'http://terminology.hl7.org/CodeSystem/observation-category',code:'laboratory',display:'Laboratory'}]}],
+      code:{coding:[{system:'http://loinc.org',code:loinc.code,display:loinc.display}],text:def.name},
+      subject:{reference:`Patient/${patFhirId}`,display:patient.name},
+      effectiveDateTime:report.date+'T00:00:00+08:00',
+      issued: nowISO(),
+      performer:[{display:obs.enteredBy||'Unknown'}],
+      valueQuantity:{value:parseFloat(obs.value),unit:def.unit,system:'http://unitsofmeasure.org',code:def.unit},
+      referenceRange:[buildRefRange(tid,patient.gender,def.unit)],
+      ...(abn && {
+        interpretation:[{coding:[{system:'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation',code:'A',display:'Abnormal'}],text:'異常'}],
+        note:[{text:`建議回診：${def.ref}`}],
+      }),
+      extension:[
+        {url:'http://hl7.org/fhir/StructureDefinition/observation-enteredBy',valueString:obs.enteredBy||''},
+        {url:'http://hl7.org/fhir/StructureDefinition/observation-enteredAt',valueString:obs.enteredAt||''},
+        {url:'urn:tw:hospital:dept',valueString:obs.dept||def.dept},
+      ],
+    };
+    entries.push({fullUrl:`urn:uuid:${obsId}`,resource:obsRes,request:{method:'PUT',url:`Observation/${obsId}`}});
+  });
+
+  /* Practitioners (notes/doctor orders) */
+  const docSet=new Set();
+  (report.notes||[]).forEach(n=>{
+    const docKey=sanitizeFhirId(`local-prac-${n.doctor}`);
+    if(!docSet.has(docKey)){
+      docSet.add(docKey);
+      entries.push({
+        fullUrl:`urn:uuid:${docKey}`,
+        resource:{resourceType:'Practitioner',id:docKey,active:true,
+          name:[{text:n.doctor,use:'official'}],
+          qualification:[{code:{text:n.dept}}]},
+        request:{method:'PUT',url:`Practitioner/${docKey}`},
+      });
+    }
+  });
+
+  return {
+    resourceType:'Bundle',
+    id:sanitizeFhirId(`bundle-${report.rid}-${Date.now()}`),
+    type:'transaction',
+    timestamp: nowISO(),
+    meta:{lastUpdated:nowISO(),tag:[{system:'urn:tw:health-report-system',code:'health-checkup',display:'體檢報告'}]},
+    entry:entries,
+  };
+}
+
+function buildRefRange(tid,gender,unit){
+  const r=getRange(tid,gender);
+  if(!r)return{text:'無參考範圍'};
+  const[lo,hi]=r;
+  const rr={};
+  if(lo!==null)rr.low={value:lo,unit,system:'http://unitsofmeasure.org'};
+  if(hi!==null)rr.high={value:hi,unit,system:'http://unitsofmeasure.org'};
+  rr.text=rangeText(tid,gender);
+  return rr;
+}
+
+/**
+ * Upload bundle to HAPI FHIR Server via transaction POST
+ */
+async function doFhirUpload(patientId, rid){
+  const {patient,report}=findReport(rid)||{};
+  if(!patient||!report){alert('找不到報告資料');return;}
+  const obsCount=Object.keys(report.obs).length;
+  if(obsCount===0){alert('尚無任何檢驗數據，無法上傳至 FHIR Server。');return;}
+
+  const statusEl=document.getElementById(`fhirStatus_${rid}`);
+  if(statusEl)statusEl.innerHTML=`<div class="alert alert-fhir"><span class="spin">⟳</span> 正在連接 FHIR Server，上傳中（共 ${obsCount+1} 筆資源）...</div>`;
+
+  const bundle=buildFhirBundle(patient,report);
+  const serverUrl=S.fhirServer.replace(/\/+$/,'');
+
+  try{
+    const res=await fetch(serverUrl,{
+      method:'POST',
+      headers:{'Content-Type':'application/fhir+json;charset=utf-8','Accept':'application/fhir+json'},
+      body:JSON.stringify(bundle),
+    });
+    const respText=await res.text();
+    let respJson=null;
+    try{respJson=JSON.parse(respText);}catch(e){}
+
+    if(res.ok){
+      const entryCount=respJson?.entry?.length||bundle.entry.length;
+      if(!report.fhir)report.fhir={};
+      report.fhir.uploadedAt=nowStr();
+      report.fhir.entryCount=entryCount;
+      report.fhir.serverUrl=serverUrl;
+      report.fhir.patientFhirId=sanitizeFhirId(`local-patient-${patient.id}`);
+      saveCache();
+      if(statusEl)statusEl.innerHTML=`<div class="alert alert-success">✅ 上傳成功！共 ${entryCount} 筆 FHIR 資源已送出至伺服器。<br>時間：${report.fhir.uploadedAt}</div>`;
+    }else{
+      const errMsg=respJson?.issue?.[0]?.diagnostics||respText.substring(0,200)||`HTTP ${res.status}`;
+      if(statusEl)statusEl.innerHTML=`<div class="alert alert-danger">❌ 上傳失敗：${errMsg}</div>`;
+    }
+  }catch(e){
+    if(statusEl)statusEl.innerHTML=`<div class="alert alert-danger">❌ 連線錯誤：${e.message}<br><small>請確認 FHIR Server URL 是否正確，或網路是否可連線。</small></div>`;
+  }
+}
+
+/**
+ * Fetch Patient + Observations from HAPI FHIR Server
+ */
+async function doFhirFetch(patientId, rid){
+  const {patient,report}=findReport(rid)||{};
+  if(!patient||!report){alert('找不到報告資料');return;}
+
+  const statusEl=document.getElementById(`fhirStatus_${rid}`);
+  if(statusEl)statusEl.innerHTML=`<div class="alert alert-fhir"><span class="spin">⟳</span> 正在從 FHIR Server 查詢資料...</div>`;
+
+  const serverUrl=S.fhirServer.replace(/\/+$/,'');
+  const fhirPatId=sanitizeFhirId(`local-patient-${patient.id}`);
+
+  try{
+    // 1. Fetch Patient resource
+    const pRes=await fetch(`${serverUrl}/Patient/${fhirPatId}`,{headers:{'Accept':'application/fhir+json'}});
+    // 2. Fetch Observations linked to this patient
+    const oRes=await fetch(`${serverUrl}/Observation?patient=${fhirPatId}&_count=100&_sort=-date`,{headers:{'Accept':'application/fhir+json'}});
+
+    if(!oRes.ok){
+      const t=await oRes.text();
+      if(statusEl)statusEl.innerHTML=`<div class="alert alert-danger">❌ 查詢 Observation 失敗（HTTP ${oRes.status}）：${t.substring(0,200)}</div>`;
+      return;
+    }
+
+    const patJson=pRes.ok?await pRes.json():null;
+    const obsBundle=await oRes.json();
+    const entries=obsBundle.entry||[];
+    const obsResources=entries.map(e=>e.resource).filter(r=>r&&r.resourceType==='Observation');
+
+    if(!report.fhir)report.fhir={};
+    report.fhir.fetchedAt=nowStr();
+    report.fhir.fetchedCount=obsResources.length;
+    saveCache();
+
+    // Offer to sync back
+    const syncItems=[];
+    obsResources.forEach(obs=>{
+      if(!obs.valueQuantity)return;
+      const loincCode=obs.code?.coding?.[0]?.code;
+      const tid=Object.keys(LOINC).find(k=>LOINC[k].code===loincCode);
+      if(tid){syncItems.push({tid,value:obs.valueQuantity.value,status:obs.status});}
+    });
+
+    const patBlock=patJson?`<div style="margin-bottom:8px">✅ 病患資源（Patient）：<strong>${patJson.name?.[0]?.text||patient.name}</strong>（ID: ${patJson.id}）</div>`
+      :`<div style="margin-bottom:8px">⚠ 病患資源未找到（尚未上傳或已過期）</div>`;
+
+    const syncRows=syncItems.map(i=>{
+      const def=T[i.tid];
+      return`<tr><td>${def?.name||i.tid}</td><td>${i.value}</td><td>${def?.unit||''}</td><td><span class="badge badge-${i.status==='final'?'success':'warning'}">${i.status}</span></td></tr>`;
+    }).join('');
+
+    const syncBlock=syncItems.length?`
+      <div style="margin:10px 0;font-weight:600;font-size:13px">📥 伺服器上共有 ${syncItems.length} 筆 Observation：</div>
+      <table style="margin-bottom:10px"><thead><tr><th>項目</th><th>數值</th><th>單位</th><th>狀態</th></tr></thead><tbody>${syncRows}</tbody></table>
+      <button class="btn btn-fhir btn-sm" onclick="syncFromFhir('${rid}','${JSON.stringify(syncItems).replace(/'/g,'&apos;')}')">⬇ 同步至本機資料</button>
+    `:`<div style="color:var(--muted);font-size:13px;margin-top:6px">伺服器上目前無此病患之 Observation 資料。</div>`;
+
+    if(statusEl)statusEl.innerHTML=`<div class="alert alert-fhir">
+      <div style="font-weight:600;margin-bottom:8px">📡 FHIR Server 查詢結果（${nowStr()}）</div>
+      ${patBlock}${syncBlock}
+    </div>`;
+  }catch(e){
+    if(statusEl)statusEl.innerHTML=`<div class="alert alert-danger">❌ 連線錯誤：${e.message}</div>`;
+  }
+}
+
+/**
+ * Sync fetched FHIR data back to local observations
+ */
+function syncFromFhir(rid, itemsJson){
+  let items;
+  try{items=JSON.parse(itemsJson);}catch(e){alert('解析錯誤');return;}
+  const{patient,report}=findReport(rid)||{};
+  if(!patient||!report)return;
+  if(!confirm(`確認要將 FHIR Server 上的 ${items.length} 筆數據同步至本機？已有數值將被覆蓋。`))return;
+  items.forEach(i=>{
+    report.obs[i.tid]={value:i.value,enteredBy:'FHIR Server 同步',enteredAt:nowStr(),dept:T[i.tid]?.dept||'—'};
+  });
+  saveCache();
+  render();
+}
+
+/**
+ * Export FHIR Bundle as downloadable TXT file
+ */
+function exportFhirTxt(patientId, rid){
+  const{patient,report}=findReport(rid)||{};
+  if(!patient||!report){alert('找不到報告資料');return;}
+  const obsCount=Object.keys(report.obs).length;
+  if(obsCount===0){alert('尚無任何檢驗數據可匯出。');return;}
+
+  const bundle=buildFhirBundle(patient,report);
+  const bundleJson=JSON.stringify(bundle,null,2);
+  const sep='═'.repeat(70);
+  const sep2='─'.repeat(70);
+
+  // Human-readable summary
+  const abnItems=Object.entries(report.obs).filter(([tid,o])=>isAbn(tid,o.value,patient.gender));
+  const summaryLines=[
+    sep,'  體檢報告 FHIR R4 資料匯出',`  匯出時間：${nowStr()}`,`  FHIR Server：${S.fhirServer}`,sep,'',
+    '【病患基本資料】',
+    `  姓　　名：${patient.name}`,
+    `  性　　別：${patient.gender==='M'?'男':'女'}`,
+    `  出生日期：${patient.birth}（${calcAge(patient.birth)} 歲）`,
+    `  健保卡號：${patient.idCard}`,
+    `  病　歷　號：${patient.mid}`,
+    '',
+    '【體檢資訊】',
+    `  體檢醫院：${report.hospital}`,
+    `  體檢日期：${report.date}`,
+    `  已登入項目：${obsCount} 項`,
+    `  異常項目數：${abnItems.length} 項`,
+    '',
+    '【檢驗結果摘要】',
+    sep2,
+    `  ${'項目名稱'.padEnd(28)} ${'數值'.padStart(9)}  ${'單位'.padEnd(10)}  ${'正常範圍'.padEnd(18)}  狀態`,
+    sep2,
+    ...Object.entries(report.obs).map(([tid,obs])=>{
+      const def=T[tid];const abn=isAbn(tid,obs.value,patient.gender);
+      const rt=rangeText(tid,patient.gender);
+      return `  ${def.name.padEnd(28)} ${String(obs.value).padStart(9)}  ${def.unit.padEnd(10)}  ${rt.padEnd(18)}  ${abn?'⚠ 異常':'✓ 正常'}`;
+    }),
+    sep2,
+    '',
+    ...(abnItems.length?['【異常項目建議複診科別】',...abnItems.map(([tid])=>`  ${T[tid].name} → 建議前往：${T[tid].ref}`),'']:[]),
+    ...(report.appts.length?['【已預約回診】',...report.appts.map(a=>`  ${a.refDept}｜${a.doctor}｜${fmtSlot(a.slotTime)}｜看診號 #${a.num}`),'']:[]),
+    ...(report.notes?.length?['【醫師醫囑】',...report.notes.map(n=>`  [${T[n.tid]?.name||n.tid}] ${n.doctor}（${n.dept}）：${n.note}　（${n.ts}）`),'']:[]),
+    report.fhir?.uploadedAt?`【FHIR 上傳記錄】\n  最後上傳：${report.fhir.uploadedAt}｜共 ${report.fhir.entryCount} 筆資源\n`:'',
+    sep,
+    '  FHIR R4 Transaction Bundle（JSON）',
+    `  FHIR Version: R4  |  Profile: HL7 International`,
+    `  Patient FHIR ID: ${sanitizeFhirId('local-patient-'+patient.id)}`,
+    `  Total Entries: ${bundle.entry.length} (1 Patient + ${bundle.entry.length-1-[...new Set((report.notes||[]).map(n=>n.doctor))].length} Observations + ${[...new Set((report.notes||[]).map(n=>n.doctor))].length} Practitioners)`,
+    sep,
+    '',
+    bundleJson,
+    '',
+    sep,
+    `  本檔案由「體檢報告資料整合系統」自動產生`,
+    `  可直接上傳至任何相容 FHIR R4 的伺服器（如 HAPI FHIR Server）`,
+    `  上傳指令範例：`,
+    `  curl -X POST "${S.fhirServer}" \\`,
+    `    -H "Content-Type: application/fhir+json" \\`,
+    `    -d @<此檔案中的JSON Bundle部分>`,
+    sep,
+  ];
+
+  const txt=summaryLines.join('\n');
+  const blob=new Blob([txt],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`FHIR_${patient.name}_${report.hospital}_${report.date}.txt`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Preview FHIR Bundle JSON in a panel (inline syntax highlight)
+ */
+function previewFhirJson(patientId, rid){
+  const{patient,report}=findReport(rid)||{};
+  if(!patient||!report||Object.keys(report.obs).length===0){alert('尚無資料可預覽');return;}
+  const bundle=buildFhirBundle(patient,report);
+  const json=JSON.stringify(bundle,null,2)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    // syntax colour
+    .replace(/"([^"]+)":/g,'<span class="k">"$1"</span>:')
+    .replace(/: "([^"]*)"/g,': <span class="s">"$1"</span>')
+    .replace(/: (\d[\d.]*)/g,': <span class="n">$1</span>')
+    .replace(/: (true|false|null)/g,': <span class="b">$1</span>');
+  const el=document.getElementById(`fhirPre_${rid}`);
+  if(el){
+    if(el.innerHTML){el.innerHTML='';el.style.display='none';}
+    else{el.innerHTML=json;el.style.display='block';}
+  }
+}
+
+/**
+ * Render the FHIR panel card (used in admin & tech views)
+ */
+function vFhirPanel(patient, report, compact){
+  const obsCount=Object.keys(report.obs).length;
+  const fi=report.fhir||{};
+  return`
+  <div class="card card-fhir">
+    <div class="card-title" style="color:var(--fhir);border-color:var(--fhir-border)">
+      🔗 FHIR R4 資料整合
+      <span class="fhir-tag">HL7 R4</span>
+      ${fi.uploadedAt?`<span class="badge badge-fhir" style="margin-left:4px">✓ 已上傳</span>`:''}
+    </div>
+
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+      <span style="font-size:12px;color:var(--muted);white-space:nowrap">FHIR Server：</span>
+      <input id="fhirUrl_${report.rid}" class="form-control" style="flex:1;min-width:220px;max-width:400px;font-family:'DM Mono',monospace;font-size:11px"
+        value="${S.fhirServer}" placeholder="https://hapi.fhir.org/baseR4">
+      <button class="btn btn-secondary btn-sm" onclick="S.fhirServer=document.getElementById('fhirUrl_${report.rid}').value.trim();alert('✓ FHIR Server URL 已套用')">套用 URL</button>
+    </div>
+
+    ${fi.uploadedAt?`<div class="alert alert-success" style="margin-bottom:10px;font-size:12px">
+      ✅ 最後上傳：<strong>${fi.uploadedAt}</strong>｜共 <strong>${fi.entryCount}</strong> 筆 FHIR 資源
+      ${fi.serverUrl?`<br>伺服器：<span class="mono">${fi.serverUrl}</span>`:''}
+    </div>`:''}
+    ${fi.fetchedAt?`<div class="alert alert-info" style="margin-bottom:10px;font-size:12px">📥 最後讀取：<strong>${fi.fetchedAt}</strong>（共 ${fi.fetchedCount||'?'} 筆 Observation）</div>`:''}
+
+    <div id="fhirStatus_${report.rid}" style="margin-bottom:10px"></div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      <button class="btn btn-fhir" onclick="doFhirUpload('${patient.id}','${report.rid}')" ${obsCount===0?'disabled':''}>
+        📤 上傳至 FHIR Server ${obsCount?`(${obsCount} 項數據)`:'（無資料）'}
+      </button>
+      <button class="btn btn-fhir-outline" onclick="doFhirFetch('${patient.id}','${report.rid}')">
+        📥 從 FHIR Server 讀取
+      </button>
+      <button class="btn btn-secondary" onclick="exportFhirTxt('${patient.id}','${report.rid}')" ${obsCount===0?'disabled':''}>
+        💾 匯出 FHIR TXT 檔案
+      </button>
+      <button class="btn btn-secondary btn-sm" onclick="previewFhirJson('${patient.id}','${report.rid}')" ${obsCount===0?'disabled':''} style="margin-left:auto">
+        {} 預覽 JSON
+      </button>
+    </div>
+    <pre id="fhirPre_${report.rid}" class="fhir-pre" style="display:none"></pre>
+    ${!compact?`<div style="font-size:11px;color:var(--muted);line-height:1.6;margin-top:6px;padding-top:10px;border-top:1px solid var(--fhir-border)">
+      ℹ️ FHIR 資源包含：<span class="mono">Patient</span> × 1、<span class="mono">Observation</span> × ${obsCount}、<span class="mono">Practitioner</span> × ${[...new Set((report.notes||[]).map(n=>n.doctor))].length}<br>
+      所有 Observation 均附有 LOINC 代碼及參考值範圍。預設伺服器為公開測試伺服器（hapi.fhir.org），資料可能被定期清除。
+    </div>`:''}
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   8. RENDER ENGINE
+   ═══════════════════════════════════════════════════════════ */
+function render(){
+  const hr=document.getElementById('hdrRight');
+  if(S.user){
+    const icons={patient:'👤',tech:'🔬',doctor:'⚕️',admin:'🛡️'};
+    const rn={patient:'病患',tech:'醫事人員',doctor:'醫師',admin:'管理員'};
+    const u=S.user;
+    let extra=u.hospital?` ｜ ${u.hospital}`:'';
+    if(u.dept)extra+=` ${u.dept}`;
+    hr.innerHTML=`
+      <div class="hdr-user-chip">${icons[u.role]||'👤'} ${u.name}（${rn[u.role]||u.role}）${extra}</div>
+      <button class="btn btn-secondary btn-sm" onclick="clearCache()" title="重置快取資料">🗑 清除快取</button>
+      <button class="btn btn-secondary btn-sm" onclick="logout()">登出</button>`;
+  }else{
+    hr.innerHTML=`<button class="btn btn-secondary btn-sm" onclick="clearCache()">🗑 清除快取</button>`;
+  }
+  const views={
+    landing:vLanding,patientLogin:vPatientLogin,patientDash:vPatientDash,patientReport:vPatientReport,
+    apptBook:vApptBook,apptSuccess:vApptSuccess,
+    hospSelect:vHospSelect,staffLogin:vStaffLogin,
+    techView:vTechView,doctorView:vDoctorView,adminView:vAdminView,adminPatient:vAdminPatient,
+  };
+  document.getElementById('app').innerHTML=(views[S.view]||vLanding)();
+}
+function logout(){S.user=null;S.selPatient=null;S.selReport=null;S.view='landing';render();}
+function go(v){S.view=v;render();}
+
+/* ═══════════════════════════════════════════════════════════
+   9. LANDING
+   ═══════════════════════════════════════════════════════════ */
+function vLanding(){
+  return`<div class="landing-wrap">
+    <div>
+      <div style="font-size:56px;margin-bottom:8px">🏥</div>
+      <div class="landing-title">體檢報告資料整合系統</div>
+      <div class="landing-sub">請選擇您的登入身份以進入系統</div>
+      <div style="margin-top:10px"><span class="fhir-tag">🔗 FHIR R4 Compatible</span></div>
+    </div>
+    <div class="role-cards">
+      <div class="role-card" onclick="go('patientLogin')">
+        <div class="role-card-icon">🧑‍💼</div>
+        <div class="role-card-name">病　患</div>
+        <div class="role-card-desc">查看個人體檢報告<br>預約回診掛號</div>
+      </div>
+      <div class="role-card" onclick="go('hospSelect')">
+        <div class="role-card-icon">🏨</div>
+        <div class="role-card-name">院方人員</div>
+        <div class="role-card-desc">醫事人員 / 醫師 / 管理員<br>請先選擇所屬醫院</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   10. PATIENT LOGIN（記憶 datalist + 自由輸入）
+   ═══════════════════════════════════════════════════════════ */
+function vPatientLogin(){
+  const opts=S.patients.map(p=>`<option value="${p.name}">`).join('');
+  return`<div class="login-wrap">
+    <div class="back-btn" onclick="go('landing')">← 返回首頁</div>
+    <div class="card">
+      <div class="card-title">🧑‍💼 病患身份登入</div>
+      <div class="alert alert-info">請輸入姓名及健保卡卡號驗證身份。已儲存的病患可從下拉清單選取，系統將自動帶入卡號。</div>
+      <div class="form-group">
+        <label class="form-label">姓名</label>
+        <input id="pName" class="form-control" list="pNames" oninput="onPNameInput()" placeholder="請輸入或從清單選取姓名" autocomplete="off">
+        <datalist id="pNames">${opts}</datalist>
+        <div class="hint">💡 可直接鍵入，或點選欄位從已儲存清單快速選取</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">健保卡卡號</label>
+        <input id="pCard" class="form-control" placeholder="例：A123456789">
+        <div class="hint" id="cardHint"></div>
+      </div>
+      <div id="pErr" class="alert alert-danger" style="display:none"></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="doPatientLogin()">登入系統</button>
+    </div>
+  </div>`;
+}
+function onPNameInput(){
+  const nm=document.getElementById('pName')?.value.trim();
+  const hint=document.getElementById('cardHint');
+  if(!nm){if(hint)hint.textContent='';return;}
+  const p=S.patients.find(x=>x.name===nm);
+  if(p){document.getElementById('pCard').value=p.idCard;if(hint)hint.innerHTML='✅ 已自動帶入健保卡卡號';}
+  else{if(hint)hint.textContent='';}
+}
+function doPatientLogin(){
+  const nm=document.getElementById('pName').value.trim();
+  const ic=document.getElementById('pCard').value.trim();
+  const err=document.getElementById('pErr');
+  const p=S.patients.find(x=>x.name===nm&&x.idCard===ic);
+  if(!p){err.style.display='block';err.textContent='查無此病患，請確認姓名及健保卡卡號。';return;}
+  S.user={role:'patient',name:p.name,patientId:p.id};
+  S.selPatient=p;S.view='patientDash';render();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   11. PATIENT DASHBOARD
+   ═══════════════════════════════════════════════════════════ */
+function vPatientDash(){
+  const p=S.selPatient;
+  const cards=p.reports.map(r=>{
+    const abn=Object.entries(r.obs).filter(([tid,o])=>isAbn(tid,o.value,p.gender));
+    const total=Object.keys(r.obs).length;
+    const allTests=Object.values(DEPT_TESTS).flat().length;
+    return`<div class="card" style="cursor:pointer;transition:.2s" onclick="openReport('${r.rid}')"
+      onmouseenter="this.style.boxShadow='0 6px 20px rgba(26,86,219,.14)'"
+      onmouseleave="this.style.boxShadow='var(--shadow)'">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-size:16px;font-weight:700">${r.hospital}</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:3px">體檢日期：${r.date}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+          ${abn.length?`<span class="badge badge-danger">⚠ ${abn.length} 項異常</span>`:`<span class="badge badge-success">✓ 數值正常</span>`}
+          ${r.fhir?.uploadedAt?`<span class="fhir-tag">🔗 FHIR 已上傳</span>`:''}
+        </div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:16px;font-size:12px;color:var(--muted)">
+        <span>已登入 ${total} / ${allTests} 項</span>
+        ${r.appts.length?`<span>📅 ${r.appts.length} 筆預約</span>`:''}
+      </div>
+      <div style="margin-top:6px;font-size:12px;color:var(--primary);text-align:right">點擊查看完整報告 →</div>
+    </div>`;
+  }).join('');
+  return`
+    <div class="sec-title">👤 ${p.name} 的體檢報告總覽</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:18px">
+      性別：${p.gender==='M'?'男':'女'} ｜ 生日：${p.birth} ｜ 年齡：${calcAge(p.birth)} 歲 ｜ 健保卡：${p.idCard} ｜ 病歷號：${p.mid}
+    </div>
+    ${p.reports.length===0?`<div class="empty-state"><div class="empty-icon">📋</div><div>暫無體檢報告</div></div>`:cards}`;
+}
+function openReport(rid){
+  for(const p of S.patients){
+    if(p.id!==S.selPatient.id)continue;
+    const r=p.reports.find(x=>x.rid===rid);
+    if(r){S.selReport=r;S.view='patientReport';render();return;}
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   12. PATIENT REPORT VIEW
+   ═══════════════════════════════════════════════════════════ */
+function vPatientReport(){
+  const rpt=S.selReport,pat=S.selPatient;
+  const bookedDepts=new Set((rpt.appts||[]).map(a=>a.refDept));
+
+  // Appointment summary
+  let apptSec='';
+  if(rpt.appts.length){
+    const rows=rpt.appts.map(a=>`<tr>
+      <td><span style="background:#fff0f0;color:var(--danger);padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;border:1px solid #fca5a5">${a.refDept}</span></td>
+      <td>${a.doctor}</td><td>${fmtSlot(a.slotTime)}</td>
+      <td class="mono"><strong style="color:var(--primary)">#${a.num}</strong></td>
+      <td>${a.bookedAt||'—'}</td>
+      <td><span class="badge badge-success">✓ 預約成功</span></td>
+    </tr>`).join('');
+    apptSec=`<div class="card"><div class="card-title">📅 回診預約狀態</div>
+      <table><thead><tr><th>回診科別</th><th>醫師</th><th>看診時段</th><th>看診號</th><th>預約時間</th><th>狀態</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>`;
+  }
+
+  // FHIR status (read-only for patient)
+  let fhirSec='';
+  if(rpt.fhir?.uploadedAt){
+    fhirSec=`<div class="card card-fhir">
+      <div class="card-title" style="color:var(--fhir)">🔗 FHIR 資料狀態</div>
+      <div class="alert alert-fhir" style="margin:0;font-size:12px">
+        此份報告的 FHIR 資料已於 <strong>${rpt.fhir.uploadedAt}</strong> 上傳至 FHIR 伺服器（${rpt.fhir.serverUrl||'—'}），共 ${rpt.fhir.entryCount||0} 筆資源。
+      </div>
+    </div>`;
+  }
+
+  // Dept sections
+  let deptSecs='';
+  for(const[dept,tids]of Object.entries(DEPT_TESTS)){
+    const rows=tids.map(tid=>{
+      const obs=rpt.obs[tid],def=T[tid],rt=rangeText(tid,pat.gender);
+      if(!obs)return`<tr><td>${def.name}</td><td><span class="badge badge-gray">待登入</span></td><td>${def.unit}</td><td>${rt}</td><td>—</td><td>—</td><td style="font-size:11px;color:var(--muted)">—</td></tr>`;
+      const abn=isAbn(tid,obs.value,pat.gender);
+      const valCell=abn?`<span class="value-abnormal">▲ ${obs.value}</span>`:`<span class="value-normal">${obs.value}</span>`;
+      const tnotes=(rpt.notes||[]).filter(n=>n.tid===tid);
+      const notesHtml=tnotes.map(n=>`<div class="note-box"><div class="note-author">⚕️ ${n.doctor} <span style="font-weight:400;color:var(--muted)">（${n.dept}）</span></div><div class="note-text">${n.note}</div><div class="note-time">${n.ts}</div></div>`).join('');
+      let bookBtn='—';
+      if(abn){
+        const refDept=def.ref;
+        bookBtn=bookedDepts.has(refDept)
+          ?`<span class="badge badge-success" style="white-space:normal;text-align:center">✓ 已預約<br>${refDept}</span>`
+          :`<button class="btn btn-danger btn-sm" onclick="startBook('${tid}')">預約複診<br><span style="font-size:10px;font-weight:400">${refDept}</span></button>`;
+      }
+      const loincCode=LOINC[tid]?.code;
+      return`<tr>
+        <td><div style="font-weight:500">${def.name}</div>
+          ${loincCode?`<div style="font-size:10px;color:var(--subtle);margin-top:2px">LOINC: ${loincCode}</div>`:''}
+          ${notesHtml}</td>
+        <td>${valCell}</td><td>${def.unit}</td><td>${rt}</td>
+        <td>${abn?`<span style="background:#fff0f0;color:var(--danger);padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;border:1px solid #fca5a5">${def.ref}</span>`:'—'}</td>
+        <td style="min-width:110px">${bookBtn}</td>
+        <td style="font-size:11px;color:var(--muted)">${obs.enteredAt||'—'}<br><span style="color:var(--subtle)">${obs.enteredBy||''}</span></td>
+      </tr>`;
+    }).join('');
+    deptSecs+=`<div class="card"><div class="card-title"><span class="dept-tag">${dept}</span></div>
+      <table><thead><tr><th>項目</th><th>數值</th><th>單位</th><th>正常範圍</th><th>建議複診</th><th>預約</th><th>登入時間 / 人員</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>`;
+  }
+  return`
+    <div class="back-btn" onclick="S.view='patientDash';render()">← 返回報告列表</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <div class="sec-title" style="margin:0">${rpt.hospital} 體檢報告</div>
+      <div style="font-size:13px;color:var(--muted)">體檢日期：${rpt.date}</div>
+    </div>
+    ${apptSec}${fhirSec}${deptSecs}`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   13. APPOINTMENT BOOKING
+   ═══════════════════════════════════════════════════════════ */
+function startBook(tid){S.bkTestId=tid;S.bkRefDept=T[tid].ref;S.bkStep=1;S.bkDocId=null;S.bkDocName=null;S.bkSlotTime=null;S.view='apptBook';render();}
+function vApptBook(){
+  const rpt=S.selReport,hospital=rpt.hospital,refDept=S.bkRefDept;
+  const docs=(DOCTORS[hospital]&&DOCTORS[hospital][refDept])||[];
+  if(S.bkStep===1){
+    if(!docs.length)return`<div class="back-btn" onclick="S.view='patientReport';render()">← 返回報告</div>
+      <div class="empty-state"><div class="empty-icon">📅</div><div>目前 <strong>${hospital} ${refDept}</strong> 無可預約診次，請洽掛號台。</div></div>`;
+    const docCards=docs.map(doc=>{
+      const slots=doc.slots.map(sl=>{const avail=sl.tot-sl.bk,full=avail<=0;
+        return`<div class="appt-slot ${full?'full':'avail'}" ${!full?`onclick="selSlot('${doc.id}','${doc.name}','${sl.t}')"`:''}> 
+          <div><div style="font-size:13px;font-weight:600">${fmtSlot(sl.t)}</div><div style="font-size:12px;color:var(--muted);margin-top:2px">剩餘名額：${avail} / ${sl.tot}</div></div>
+          ${full?`<span class="badge badge-danger">額滿</span>`:`<span class="badge badge-success">可預約</span>`}
+        </div>`;}).join('');
+      return`<div class="card"><div class="card-title">👨‍⚕️ ${doc.name}</div>${slots}</div>`;}).join('');
+    return`<div class="back-btn" onclick="S.view='patientReport';render()">← 返回報告</div>
+      <div class="sec-title">📅 預約回診 — ${refDept}</div>
+      <div class="alert alert-warning">⚠ 科別：<strong>${hospital} ${refDept}</strong>。同科別異常項目共用此次掛號，無需重複預約。</div>
+      ${docCards}`;
+  }
+  if(S.bkStep===2){
+    const pat=S.selPatient;
+    return`<div class="back-btn" onclick="S.bkStep=1;render()">← 返回選擇時段</div>
+      <div class="sec-title">📝 填寫預約資料</div>
+      <div class="card">
+        <div class="alert alert-info">院所：<strong>${hospital}</strong>｜科別：<strong>${refDept}</strong>｜醫師：<strong>${S.bkDocName}</strong><br>時段：<strong>${fmtSlot(S.bkSlotTime)}</strong></div>
+        <div class="form-group"><label class="form-label">姓名</label><input class="form-control" value="${pat.name}" readonly></div>
+        <div class="form-group"><label class="form-label">健保卡卡號</label><input class="form-control" value="${pat.idCard}" readonly></div>
+        <div class="form-group"><label class="form-label">聯絡電話 <span style="color:var(--danger)">*</span></label><input id="bkPhone" class="form-control" placeholder="請輸入聯絡電話"></div>
+        <div class="form-group"><label class="form-label">備註（選填）</label><input id="bkNote" class="form-control" placeholder="例：需輪椅、過敏藥物等"></div>
+        <button class="btn btn-primary" style="width:100%;margin-top:6px" onclick="confirmBook()">確認預約</button>
+      </div>`;
+  }
+  return '';
+}
+function selSlot(docId,docName,slotTime){S.bkDocId=docId;S.bkDocName=docName;S.bkSlotTime=slotTime;S.bkStep=2;render();}
+function confirmBook(){
+  const ph=document.getElementById('bkPhone')?.value.trim();
+  if(!ph){alert('請填寫聯絡電話');return;}
+  const rpt=S.selReport,hospital=rpt.hospital,refDept=S.bkRefDept;
+  const docs=(DOCTORS[hospital]&&DOCTORS[hospital][refDept])||[];
+  const doc=docs.find(d=>d.id===S.bkDocId);
+  const sl=doc&&doc.slots.find(s=>s.t===S.bkSlotTime);
+  if(sl)sl.bk=Math.min(sl.bk+1,sl.tot);
+  const num=sl?sl.bk:Math.floor(Math.random()*30)+1;
+  rpt.appts.push({refDept,doctor:S.bkDocName,slotTime:S.bkSlotTime,num,phone:ph,bookedAt:nowStr()});
+  saveCache();S.bkNumber=num;S.view='apptSuccess';render();
+}
+function vApptSuccess(){
+  return`<div class="success-wrap">
+    <div style="font-size:64px;margin-bottom:12px">✅</div>
+    <div style="font-size:24px;font-weight:700;color:var(--success);margin-bottom:4px">預約成功！</div>
+    <div class="card" style="text-align:left;margin-top:22px"><div class="card-title">預約確認資訊</div>
+      <table>
+        <tr><td style="color:var(--muted);width:80px">院　所</td><td><strong>${S.selReport.hospital}</strong></td></tr>
+        <tr><td style="color:var(--muted)">科　別</td><td>${S.bkRefDept}</td></tr>
+        <tr><td style="color:var(--muted)">醫　師</td><td>${S.bkDocName}</td></tr>
+        <tr><td style="color:var(--muted)">時　段</td><td>${fmtSlot(S.bkSlotTime)}</td></tr>
+        <tr><td style="color:var(--muted)">看診號</td><td><div class="big-num">#${S.bkNumber}</div></td></tr>
+      </table>
+    </div>
+    <div class="alert alert-info" style="text-align:left;margin-top:12px">
+      ℹ️ 請於看診當日提前 15 分鐘報到，並攜帶健保卡及體檢報告。<br>
+      同屬 <strong>${S.bkRefDept}</strong> 的所有異常項目已納入本次掛號。
+    </div>
+    <button class="btn btn-primary btn-lg" style="margin-top:14px" onclick="S.view='patientReport';render()">返回體檢報告</button>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   14. HOSPITAL SELECTION & STAFF LOGIN
+   ═══════════════════════════════════════════════════════════ */
+function vHospSelect(){
+  const cards=HOSPITALS.map(h=>`<div class="role-card" onclick="selHosp('${h}')"><div class="role-card-icon">🏨</div><div class="role-card-name">${h}</div><div class="role-card-desc">點擊選擇此醫院</div></div>`).join('');
+  return`<div class="landing-wrap">
+    <div>
+      <div class="back-btn" onclick="go('landing')" style="justify-content:center">← 返回首頁</div>
+      <div class="landing-title" style="font-size:24px">選擇所屬醫院</div>
+      <div class="landing-sub">院方人員請先選擇所屬醫療機構</div>
+    </div>
+    <div class="role-cards">${cards}</div>
+  </div>`;
+}
+function selHosp(h){S.pendingHosp=h;S.view='staffLogin';render();}
+function vStaffLogin(){
+  const h=S.pendingHosp;
+  const techDeptOpts=Object.keys(DEPT_TESTS).map(d=>`<option value="${d}">${d}</option>`).join('');
+  const docDeptOpts=Object.keys(DOCLIST[h]||{}).map(d=>`<option value="${d}">${d}</option>`).join('');
+  return`<div class="login-wrap">
+    <div class="back-btn" onclick="go('hospSelect')">← 返回醫院選擇</div>
+    <div class="card">
+      <div class="card-title">🏥 ${h} — 人員登入</div>
+      <div class="form-group"><label class="form-label">身份角色</label>
+        <select id="sRole" class="form-control" onchange="onRoleChg()">
+          <option value="">請選擇身份</option>
+          <option value="tech">醫事人員（醫檢師 / 放射師 / 護理師）</option>
+          <option value="doctor">醫師</option>
+          <option value="admin">管理員</option>
+        </select></div>
+      <div id="techDeptGrp" style="display:none" class="form-group"><label class="form-label">所屬檢驗科別</label>
+        <select id="sTechDept" class="form-control" onchange="onDeptChg('tech')"><option value="">請選擇科別</option>${techDeptOpts}</select></div>
+      <div id="docDeptGrp" style="display:none" class="form-group"><label class="form-label">所屬臨床科別</label>
+        <select id="sDocDept" class="form-control" onchange="onDeptChg('doctor')"><option value="">請選擇科別</option>${docDeptOpts}</select></div>
+      <div id="nameGrp" style="display:none" class="form-group"><label class="form-label">姓名</label>
+        <select id="sName" class="form-control"></select></div>
+      <div id="sErr" class="alert alert-danger" style="display:none"></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:6px" onclick="doStaffLogin()">登入</button>
+    </div></div>`;
+}
+function onRoleChg(){
+  const role=document.getElementById('sRole').value;
+  document.getElementById('techDeptGrp').style.display='none';
+  document.getElementById('docDeptGrp').style.display='none';
+  document.getElementById('nameGrp').style.display='none';
+  const h=S.pendingHosp;
+  if(role==='tech'){document.getElementById('techDeptGrp').style.display='block';}
+  else if(role==='doctor'){document.getElementById('docDeptGrp').style.display='block';}
+  else if(role==='admin'){
+    const sn=document.getElementById('sName');
+    sn.innerHTML=(ADMINS[h]||[]).map(a=>`<option value="${a}">${a}</option>`).join('');
+    document.getElementById('nameGrp').style.display='block';
+  }
+}
+function onDeptChg(type){
+  const h=S.pendingHosp;
+  const dept=type==='tech'?document.getElementById('sTechDept').value:document.getElementById('sDocDept').value;
+  const ng=document.getElementById('nameGrp'),sn=document.getElementById('sName');
+  if(!dept){ng.style.display='none';return;}
+  const names=type==='tech'?(TECHS[h]&&TECHS[h][dept])||[]:(DOCLIST[h]&&DOCLIST[h][dept])||[];
+  if(names.length){sn.innerHTML=names.map(n=>`<option value="${n}">${n}</option>`).join('');ng.style.display='block';}
+  else ng.style.display='none';
+}
+function doStaffLogin(){
+  const role=document.getElementById('sRole').value;
+  const err=document.getElementById('sErr');
+  let dept='',name='';
+  if(!role){err.style.display='block';err.textContent='請選擇身份';return;}
+  if(role==='tech'){dept=document.getElementById('sTechDept').value;if(!dept){err.style.display='block';err.textContent='請選擇檢驗科別';return;}}
+  else if(role==='doctor'){dept=document.getElementById('sDocDept').value;if(!dept){err.style.display='block';err.textContent='請選擇臨床科別';return;}}
+  name=document.getElementById('sName')?.value||'';
+  if(!name){err.style.display='block';err.textContent='請選擇姓名';return;}
+  S.user={role,name,hospital:S.pendingHosp,dept};
+  S.selPatient=null;S.selReport=null;
+  if(role==='tech')S.view='techView';else if(role==='doctor')S.view='doctorView';else S.view='adminView';
+  render();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   15. TECHNICIAN VIEW
+   ═══════════════════════════════════════════════════════════ */
+function vTechView(){
+  const u=S.user;
+  if(!S.selPatient){
+    const pts=S.patients.filter(p=>p.reports.some(r=>r.hospital===u.hospital));
+    if(!pts.length)return`<div class="sec-title">🔬 醫事人員工作台 — ${u.dept}</div><div class="empty-state"><div class="empty-icon">👥</div><div>本院目前無體檢病患</div></div>`;
+    const rows=pts.flatMap(p=>p.reports.filter(r=>r.hospital===u.hospital).map(r=>{
+      const dts=DEPT_TESTS[u.dept]||[];const done=dts.filter(tid=>r.obs[tid]!==undefined).length;
+      const pct=Math.round(done/dts.length*100);
+      return`<tr>
+        <td><strong>${p.name}</strong></td><td>${p.gender==='M'?'男':'女'} / ${calcAge(p.birth)}歲</td>
+        <td class="mono">${p.idCard}</td><td class="mono">${p.mid}</td><td>${r.date}</td>
+        <td><div style="display:flex;align-items:center;gap:8px">
+          <div style="background:var(--border);border-radius:4px;height:6px;width:70px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${pct===100?'var(--success)':'var(--primary)'};border-radius:4px"></div></div>
+          <span style="font-size:12px">${done}/${dts.length}</span>
+          <span class="badge badge-${done===dts.length?'success':'warning'}">${done===dts.length?'完成':'進行中'}</span>
+        </div></td>
+        <td>${r.fhir?.uploadedAt?`<span class="fhir-tag" style="font-size:10px">🔗 已上傳</span>`:''}</td>
+        <td><button class="btn btn-primary btn-sm" onclick="techSel('${p.id}','${r.rid}')">登入數據</button></td>
+      </tr>`;
+    })).join('');
+    return`<div class="sec-title">🔬 醫事人員工作台 — ${u.dept}</div>
+      <div class="alert alert-info">登入身份：${u.name} ｜ ${u.hospital} ${u.dept}</div>
+      <div class="card"><div class="card-title">選擇病患以登入數據</div>
+        <table><thead><tr><th>姓名</th><th>性別/年齡</th><th>健保卡號</th><th>病歷號</th><th>體檢日期</th><th>完成度</th><th>FHIR</th><th>操作</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>`;
+  }
+  return vTechInput();
+}
+function techSel(pid,rid){S.selPatient=S.patients.find(p=>p.id===pid);S.selReport=S.selPatient.reports.find(r=>r.rid===rid);render();}
+function vTechInput(){
+  const u=S.user,pat=S.selPatient,rpt=S.selReport;
+  const tids=DEPT_TESTS[u.dept]||[];
+  const rows=tids.map(tid=>{
+    const def=T[tid],obs=rpt.obs[tid],rt=rangeText(tid,pat.gender);
+    if(obs!==undefined){
+      const abn=isAbn(tid,obs.value,pat.gender);
+      return`<tr>
+        <td>${def.name}<div style="font-size:10px;color:var(--subtle)">LOINC: ${LOINC[tid]?.code||'—'}</div></td>
+        <td>${def.unit}</td><td style="font-size:12px">${rt}</td>
+        <td class="${abn?'value-abnormal':'value-normal'}">${obs.value} ${abn?'⚠ 異常':'✓'}</td>
+        <td style="font-size:11px;color:var(--muted)">${obs.enteredAt||'—'}</td>
+        <td style="font-size:11px;color:var(--muted)">${obs.enteredBy||'—'}</td>
+        <td><button class="btn btn-secondary btn-sm" onclick="editObs('${tid}')">修改</button></td>
+      </tr>`;
+    }
+    return`<tr>
+      <td>${def.name}<div style="font-size:10px;color:var(--subtle)">LOINC: ${LOINC[tid]?.code||'—'}</div></td>
+      <td>${def.unit}</td><td style="font-size:12px">${rt}</td>
+      <td><div style="display:flex;align-items:center;gap:6px">
+        <input type="number" id="inp_${tid}" class="form-control" style="width:120px" placeholder="輸入數值" step="0.01">
+        <span style="font-size:11px;color:var(--muted)">${def.unit}</span>
+      </div></td>
+      <td colspan="2" style="color:var(--subtle);font-size:11px">尚未登入</td>
+      <td><button class="btn btn-primary btn-sm" onclick="submitObs('${tid}')">登入</button></td>
+    </tr>`;
+  }).join('');
+  return`
+    <div class="back-btn" onclick="S.selPatient=null;S.selReport=null;render()">← 返回病患列表</div>
+    <div class="sec-title">🔬 ${pat.name}（${rpt.hospital} / 體檢日：${rpt.date}）</div>
+    <div class="alert alert-warning">⚠ 登入前請確認數值正確。系統會對極端數值發出警告，最終責任由登入人員承擔。</div>
+    <div class="card"><div class="card-title"><span class="dept-tag">${u.dept}</span> 檢驗項目</div>
+      <table><thead><tr><th>項目（LOINC）</th><th>單位</th><th>正常範圍</th><th>數值</th><th>登入時間</th><th>登入人員</th><th>操作</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    ${vFhirPanel(pat, rpt, true)}`;
+}
+function submitObs(tid){
+  const inp=document.getElementById(`inp_${tid}`);
+  if(!inp)return;
+  const v=parseFloat(inp.value);
+  if(isNaN(v)){alert('請輸入有效數值');return;}
+  const def=T[tid],pat=S.selPatient,rpt=S.selReport;
+  if(isExtremeWarn(tid,v)){
+    if(!confirm(`⚠️ 極端數值警告\n\n項目：${def.name}\n輸入值：${v} ${def.unit}\n合理範圍：${def.wL} – ${def.wH}\n\n確認無誤按「確定」，否則按「取消」重新輸入。`)){inp.value='';return;}
+  }else if(isAbn(tid,v,pat.gender)){
+    if(!confirm(`注意：${v} ${def.unit} 超出正常範圍（${rangeText(tid,pat.gender)}），確認登入？`))return;
+  }
+  rpt.obs[tid]={value:v,enteredBy:S.user.name,enteredAt:nowStr(),dept:S.user.dept};
+  saveCache();render();
+}
+function editObs(tid){
+  const rpt=S.selReport,pat=S.selPatient,def=T[tid],obs=rpt.obs[tid];
+  const nv=prompt(`修改「${def.name}」\n目前：${obs.value} ${def.unit}\n正常範圍：${rangeText(tid,pat.gender)}\n\n請輸入新數值：`);
+  if(nv===null)return;
+  const v=parseFloat(nv);if(isNaN(v)){alert('無效數值');return;}
+  if(isExtremeWarn(tid,v)){if(!confirm(`⚠ 極端值 ${v}，確認？`))return;}
+  rpt.obs[tid]={...obs,value:v,enteredBy:S.user.name+'（修改）',enteredAt:nowStr()};
+  saveCache();render();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   16. DOCTOR VIEW
+   ═══════════════════════════════════════════════════════════ */
+function vDoctorView(){
+  const u=S.user;
+  if(!S.selPatient){
+    const pts=S.patients.filter(p=>p.reports.some(r=>r.hospital===u.hospital));
+    if(!pts.length)return`<div class="sec-title">⚕️ 醫師工作台</div><div class="empty-state"><div class="empty-icon">👥</div><div>本院目前無體檢病患</div></div>`;
+    const rows=pts.flatMap(p=>p.reports.filter(r=>r.hospital===u.hospital).map(r=>{
+      const abn=Object.entries(r.obs).filter(([tid,o])=>isAbn(tid,o.value,p.gender));
+      return`<tr>
+        <td><strong>${p.name}</strong></td><td>${p.gender==='M'?'男':'女'} / ${calcAge(p.birth)}歲</td>
+        <td class="mono">${p.idCard}</td><td>${r.date}</td>
+        <td>${Object.keys(r.obs).length} 項 ${abn.length?`<span class="badge badge-danger">⚠ ${abn.length}</span>`:''}</td>
+        <td><button class="btn btn-primary btn-sm" onclick="docSel('${p.id}','${r.rid}')">查看 / 醫囑</button></td>
+      </tr>`;
+    })).join('');
+    return`<div class="sec-title">⚕️ 醫師工作台 — ${u.dept}</div>
+      <div class="alert alert-info">登入：${u.name} ｜ ${u.hospital} ${u.dept}。您可查看所有病患數值並新增醫囑，醫囑即時供病患查閱。</div>
+      <div class="card"><div class="card-title">病患列表</div>
+        <table><thead><tr><th>姓名</th><th>性別/年齡</th><th>健保卡號</th><th>體檢日期</th><th>已登數據</th><th>操作</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>`;
+  }
+  return vDoctorPatient();
+}
+function docSel(pid,rid){S.selPatient=S.patients.find(p=>p.id===pid);S.selReport=S.selPatient.reports.find(r=>r.rid===rid);render();}
+function vDoctorPatient(){
+  const u=S.user,pat=S.selPatient,rpt=S.selReport;
+  let secs='';
+  for(const[dept,tids]of Object.entries(DEPT_TESTS)){
+    const rows=tids.map(tid=>{
+      const obs=rpt.obs[tid],def=T[tid],rt=rangeText(tid,pat.gender);
+      if(!obs)return`<tr><td>${def.name}</td><td colspan="5"><span class="badge badge-gray">待登入</span></td></tr>`;
+      const abn=isAbn(tid,obs.value,pat.gender);
+      const valCell=abn?`<span class="value-abnormal">▲ ${obs.value}</span>`:`<span class="value-normal">${obs.value}</span>`;
+      const tnotes=(rpt.notes||[]).filter(n=>n.tid===tid);
+      const notesHtml=tnotes.map(n=>`<div class="note-box"><div class="note-author">⚕️ ${n.doctor} <span style="font-weight:400;color:var(--muted)">（${n.dept}）</span></div><div class="note-text">${n.note}</div><div class="note-time">${n.ts}</div></div>`).join('');
+      return`<tr>
+        <td><div style="font-weight:500">${def.name}</div><div style="font-size:10px;color:var(--subtle)">LOINC: ${LOINC[tid]?.code||'—'}</div>
+          ${notesHtml}
+          <div style="margin-top:8px;display:flex;gap:6px;align-items:center">
+            <input id="nt_${tid}" class="form-control" style="font-size:12px" placeholder="輸入醫囑 / 備註">
+            <button class="btn btn-outline btn-sm" onclick="addNote('${tid}')">新增醫囑</button>
+          </div></td>
+        <td>${valCell}</td><td>${def.unit}</td><td>${rt}</td>
+        <td style="font-size:11px;color:var(--muted)">${obs.enteredAt||'—'}</td>
+        <td style="font-size:11px;color:var(--muted)">${obs.enteredBy||'—'}</td>
+      </tr>`;
+    }).join('');
+    secs+=`<div class="card"><div class="card-title"><span class="dept-tag">${dept}</span></div>
+      <table><thead><tr><th>項目（可新增醫囑）</th><th>數值</th><th>單位</th><th>正常範圍</th><th>登入時間</th><th>登入人員</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>`;
+  }
+  return`<div class="back-btn" onclick="S.selPatient=null;S.selReport=null;render()">← 返回病患列表</div>
+    <div class="sec-title">⚕️ ${pat.name} — ${rpt.hospital}（${rpt.date}）</div>
+    ${secs}`;
+}
+function addNote(tid){
+  const inp=document.getElementById(`nt_${tid}`);const note=inp?.value.trim();
+  if(!note){alert('請輸入醫囑內容');return;}
+  if(!S.selReport.notes)S.selReport.notes=[];
+  S.selReport.notes.push({tid,doctor:S.user.name,dept:S.user.dept,note,ts:nowStr()});
+  saveCache();render();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   17. ADMIN VIEW
+   ═══════════════════════════════════════════════════════════ */
+function vAdminView(){
+  const u=S.user;
+  const rows=S.patients.map(p=>{
+    const all=p.reports.length;
+    const here=p.reports.filter(r=>r.hospital===u.hospital).length;
+    const totalObs=p.reports.filter(r=>r.hospital===u.hospital).reduce((s,r)=>s+Object.keys(r.obs).length,0);
+    const fhirUploaded=p.reports.filter(r=>r.hospital===u.hospital&&r.fhir?.uploadedAt).length;
+    return`<tr>
+      <td><strong>${p.name}</strong></td><td>${p.gender==='M'?'男':'女'}</td>
+      <td class="mono">${p.idCard}</td><td class="mono">${p.mid}</td><td>${p.birth}</td>
+      <td>${all} 份 <span class="badge badge-${here>0?'primary':'gray'}">本院 ${here}</span></td>
+      <td>${totalObs} 項</td>
+      <td>${fhirUploaded>0?`<span class="fhir-tag" style="font-size:10px">🔗 ${fhirUploaded} 份已上傳</span>`:'-'}</td>
+      <td><button class="btn btn-primary btn-sm" onclick="adminSel('${p.id}')">查看 / 修改</button></td>
+    </tr>`;
+  }).join('');
+  return`<div class="sec-title">🛡️ 管理員工作台 — ${u.hospital}</div>
+    <div class="alert alert-info">登入：${u.name}。可查看/修改所有數據，醫事人員登入紀錄僅於此介面可見，亦可操作 FHIR 資料上傳。</div>
+    <div class="card"><div class="card-title">所有病患資料</div>
+      <table><thead><tr><th>姓名</th><th>性別</th><th>健保卡號</th><th>病歷號</th><th>生日</th><th>體檢紀錄</th><th>已登數據</th><th>FHIR 狀態</th><th>操作</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>`;
+}
+function adminSel(pid){S.selPatient=S.patients.find(p=>p.id===pid);S.activeTab=0;S.view='adminPatient';render();}
+function vAdminPatient(){
+  const pat=S.selPatient;
+  const tabs=pat.reports.map((r,i)=>`<div class="tab ${S.activeTab===i?'active':''}" onclick="S.activeTab=${i};render()">${r.hospital}（${r.date}）</div>`).join('');
+  const rpt=pat.reports[S.activeTab]||pat.reports[0];
+  if(!rpt)return'<p style="color:var(--muted);padding:32px">無報告資料</p>';
+
+  // Staff log (admin only)
+  const logRows=Object.entries(rpt.obs).map(([tid,obs])=>`<tr>
+    <td>${T[tid]?.name||tid}</td><td>${obs.value}</td><td>${T[tid]?.unit||'—'}</td>
+    <td><span class="dept-tag">${obs.dept||'—'}</span></td><td>${obs.enteredBy||'—'}</td>
+    <td style="font-size:11px">${obs.enteredAt||'—'}</td>
+    <td>${isAbn(tid,obs.value,pat.gender)?`<span class="badge badge-danger">異常</span>`:`<span class="badge badge-success">正常</span>`}</td>
+  </tr>`).join('');
+  const logSec=logRows?`<div class="card"><div class="card-title">📋 醫事人員登入紀錄（管理員限定）</div>
+    <table><thead><tr><th>項目</th><th>數值</th><th>單位</th><th>登入科別</th><th>登入人員</th><th>登入時間</th><th>狀態</th></tr></thead>
+    <tbody>${logRows}</tbody></table></div>`:'';
+
+  let deptSecs='';
+  for(const[dept,tids]of Object.entries(DEPT_TESTS)){
+    const rows=tids.map(tid=>{
+      const obs=rpt.obs[tid],def=T[tid],rt=rangeText(tid,pat.gender);
+      const curVal=obs?obs.value:'';const abn=obs&&isAbn(tid,obs.value,pat.gender);
+      return`<tr>
+        <td>${def.name}<div style="font-size:10px;color:var(--subtle)">LOINC: ${LOINC[tid]?.code||'—'}</div></td>
+        <td class="${abn?'value-abnormal':obs?'value-normal':''}">${obs?obs.value+(abn?' ⚠':''):'—'}</td>
+        <td>${def.unit}</td><td>${rt}</td>
+        <td style="font-size:11px;color:var(--muted)">${obs?obs.enteredAt||'—':'—'}</td>
+        <td style="font-size:11px;color:var(--muted)">${obs?obs.enteredBy||'—':'—'}</td>
+        <td><div style="display:flex;gap:5px;align-items:center">
+          <input type="number" id="ad_${tid}" class="form-control" style="width:100px" value="${curVal}" step="0.01" placeholder="數值">
+          <button class="btn btn-secondary btn-sm" onclick="adminSave('${rpt.rid}','${tid}','${dept}')">儲存</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+    deptSecs+=`<div class="card"><div class="card-title"><span class="dept-tag">${dept}</span></div>
+      <table><thead><tr><th>項目（LOINC）</th><th>數值</th><th>單位</th><th>正常範圍</th><th>登入時間</th><th>登入人員</th><th>修改</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>`;
+  }
+  return`
+    <div class="back-btn" onclick="S.selPatient=null;S.view='adminView';render()">← 返回病患列表</div>
+    <div class="sec-title">🛡️ ${pat.name} — 全部體檢資料</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px">
+      性別：${pat.gender==='M'?'男':'女'} ｜ 生日：${pat.birth} ｜ 年齡：${calcAge(pat.birth)} 歲 ｜ 健保卡：${pat.idCard} ｜ 病歷號：${pat.mid}
+    </div>
+    <div class="tab-bar">${tabs}</div>
+    ${vFhirPanel(pat, rpt, false)}
+    ${logSec}${deptSecs}`;
+}
+function adminSave(rid,tid,dept){
+  const inp=document.getElementById(`ad_${tid}`);const v=parseFloat(inp?.value);
+  if(isNaN(v)){alert('請輸入有效數值');return;}
+  const{report}=findReport(rid)||{};if(!report){alert('找不到報告');return;}
+  report.obs[tid]={value:v,enteredBy:S.user.name+'（管理員修改）',enteredAt:nowStr(),dept};
+  saveCache();alert('✓ 已儲存');render();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BOOT
+   ═══════════════════════════════════════════════════════════ */
+render();
+</script>
+</body>
+</html>
